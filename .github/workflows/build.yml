@@ -22,10 +22,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install SDL's Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libx11-dev libxext-dev libxrandr-dev libxcursor-dev \
+            libxfixes-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev libwayland-dev wayland-protocols \
+            libegl1-mesa-dev libgl1-mesa-dev libasound2-dev libpulse-dev libdrm-dev libgbm-dev
       - name: Build (SDL3 is fetched and built statically)
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-          cmake --build build -j4 --target test_pixelpeaks render_music
+          cmake --build build -j4
       - name: Bot clears all six levels (foes off, pits and water on)
         run: ./build/test_pixelpeaks bot
       - name: Bot with foes on (for information)
