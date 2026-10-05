@@ -3,6 +3,7 @@
 //                                bot (or random input), checking nothing crashes and the game reacts
 //   test_games shots DIR [ID]    screenshots of each game's title and play
 //   test_games thumbs [ID]       regenerate assets/<id>/thumb.png for the launcher
+//   test_games launcher DIR      the launcher at the top of the grid and scrolled to the last game
 #include "headless.h"
 #include "audio.h"
 #include <stdio.h>
@@ -79,6 +80,16 @@ int main(int argc, char** argv) {
   const char* dir = shots && argc > 2 ? argv[2] : nullptr;
   const char* only = argc > (shots ? 3 : 2) ? argv[shots ? 3 : 2] : nullptr;
   if (!headless::begin(true, nullptr)) { printf("headless start failed\n"); return 2; }
+  if (!strcmp(mode, "launcher") && argc > 2) {
+    std::string d = argv[2];
+    hold(0, 30);
+    headless::shot((d + "/launcher.png").c_str(), 1);
+    for (int i = 0; i < NGAMES; i++) { hold(BTN_RIGHT, 2); hold(0, 4); }
+    hold(0, 60);
+    headless::shot((d + "/launcher_end.png").c_str(), 1);
+    headless::end();
+    return 0;
+  }
   int fails = 0, n = 0;
   for (int i = 0; i < NGAMES; i++) {
     const Game* g = GAMES[i];

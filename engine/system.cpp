@@ -253,7 +253,7 @@ static void launcherStep(const Pad& in) {
   if (sel != before) audio::sfx(audio::SFX_MOVE);
   if (in.hit(BTN_A | BTN_START)) startGame(GAMES[sel]);
   int rows = (NGAMES + GRID_COLS - 1) / GRID_COLS;
-  float maxScroll = fmaxf(0, rows * ROW_H - (H - GRID_Y - 150));
+  float maxScroll = fmaxf(0, rows * ROW_H - (H - GRID_Y - 200));
   float want = clampv((sel / GRID_COLS) * ROW_H - ROW_H * 0.6f, 0.0f, maxScroll);
   scrollY = approach(scrollY, want, 0.15f);
 }
@@ -295,13 +295,15 @@ static void launcherDraw() {
       text(g->title, x + w / 2, ty + thumbH * k + 22 * k, n);
     }
   // the header, over anything scrolled up under it
-  rectGrad(0, 0, W, 190, Color(18, 14, 52, 255), Color(18, 14, 52, 0));
+  rect(0, 0, W, 150, Color(18, 14, 52));
+  rectGrad(0, 150, W, 50, Color(18, 14, 52, 255), Color(18, 14, 52, 0));
   TextStyle ts; ts.size = 96; ts.align = CENTER; ts.color = Color(255, 226, 120); ts.shadow = 6; ts.outline = Color(40, 20, 70);
   text("NOVA ARCADE", W / 2 - 50, 40, ts);
   TextStyle hd; hd.size = 56; hd.color = Color(150, 220, 255); hd.outline = Color(30, 20, 60);
   text("HD", W / 2 - 50 + textWidth("NOVA ARCADE", 96) / 2 + 24, 60, hd);
   // the footer: what the chosen game is, and the keys
-  rectGrad(0, H - 170, W, 170, Color(18, 10, 40, 0), Color(18, 10, 40, 255));
+  rectGrad(0, H - 230, W, 60, Color(40, 20, 70, 0), Color(40, 20, 70, 255));
+  rect(0, H - 170, W, 170, Color(40, 20, 70));
   TextStyle tag; tag.size = 34; tag.align = CENTER; tag.color = Color(200, 214, 255);
   textf(W / 2, H - 140, tag, "%s  -  %s", GAMES[sel]->title, GAMES[sel]->tagline);
   TextStyle hint; hint.size = 30; hint.align = CENTER; hint.color = Color(255, 220, 120); hint.outline = CLEAR;
