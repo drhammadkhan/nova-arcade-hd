@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Nova Arcade HD</title>
+<meta name="description" content="High-resolution remakes of the Nova Arcade games, playable in the browser.">
+<link rel="icon" href="icon.png">
+<style>
+  :root { --bg: #0d0a24; --ink: #f4f1ff; --dim: #a7a3cf; --gold: #ffd85a; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden;
+    font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif; }
+  canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; outline: none; background: #000; }
+  #start { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; padding: 16px; text-align: center; cursor: pointer;
+    background: radial-gradient(ellipse at 50% 35%, #3a2a7a 0%, #170f3d 55%, var(--bg) 100%); }
+  #start h1 { margin: 0; font-size: clamp(36px, 8vw, 88px); letter-spacing: 0.02em; color: var(--gold);
+    text-shadow: 0 4px 0 #3a1d5e, 0 8px 24px rgba(0,0,0,.5); }
+  #start h1 span { color: #9fe3ff; font-size: .5em; vertical-align: super; margin-left: .2em; }
+  #start p { margin: 0; color: var(--dim); font-size: clamp(14px, 2.2vw, 20px); max-width: 640px; line-height: 1.5; }
+  #play { margin-top: 10px; font: inherit; font-size: clamp(18px, 3vw, 26px); font-weight: 700; color: #2a1a10;
+    background: var(--gold); border: 0; border-radius: 999px; padding: 14px 44px; cursor: pointer;
+    box-shadow: 0 6px 0 #b8862a, 0 10px 30px rgba(255,200,80,.3); }
+  #play:active { transform: translateY(3px); box-shadow: 0 3px 0 #b8862a; }
+  #keys { font-size: 14px !important; opacity: .85; }
+  #bar { width: min(360px, 70vw); height: 8px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; display: none; }
+  #bar div { height: 100%; width: 0; background: var(--gold); transition: width .2s; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
+<div id="start">
+  <h1>NOVA ARCADE<span>HD</span></h1>
+  <p>Pixel Peaks, redrawn in high resolution, with a brand-new synthesised soundtrack.</p>
+  <button id="play">PLAY</button>
+  <div id="bar"><div></div></div>
+  <p id="keys">Arrows move &middot; Z jump / OK &middot; X action &middot; Enter pause &middot; Esc menu &middot; F11 full screen<br>or plug in any gamepad</p>
+</div>
+<script>
+  var started = false;
+  var bar = document.querySelector('#bar div');
+  var Module = {
+    canvas: document.getElementById('canvas'),
+    setStatus: function (t) {
+      var m = /\((\d+(?:\.\d+)?)\/(\d+)\)/.exec(t || '');
+      if (m) bar.style.width = (100 * m[1] / m[2]) + '%';
+    },
+    monitorRunDependencies: function (left) { if (left === 0) bar.style.width = '100%'; },
+    onRuntimeInitialized: function () {
+      document.getElementById('start').classList.add('hidden');
+      Module.canvas.focus();
+    },
+    print: function (t) { console.log(t); },
+    printErr: function (t) { console.warn(t); }
+  };
+  function start() {
+    if (started) return;
+    started = true;
+    document.getElementById('play').classList.add('hidden');
+    document.getElementById('bar').style.display = 'block';
+    var s = document.createElement('script');
+    s.src = 'nova.js';
+    document.body.appendChild(s);
+  }
+  document.getElementById('start').addEventListener('click', start);
+  window.addEventListener('keydown', function (e) {
+    if (!started && (e.key === 'Enter' || e.key === ' ' || e.key === 'z')) { e.preventDefault(); start(); }
+    // keep the page from scrolling while playing
+    if (started && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab'].indexOf(e.key) >= 0) e.preventDefault();
+  });
+  Module.canvas.addEventListener('click', function () { Module.canvas.focus(); });
+</script>
+</body>
+</html>
