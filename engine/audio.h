@@ -40,6 +40,10 @@ struct Song {
   bool loop;
 };
 
+// A continuous engine drone for racing games: pitch in Hz, volume 0..1. Call it every frame while the
+// engine should sound; it fades out a moment after the calls stop (pause, leaving the game).
+void engine(float hz, float vol);
+
 // Render audio without a device (tests and tools): interleaved stereo float, 48 kHz.
 void renderOffline(float* out, int frames);
 void init(bool openDevice);

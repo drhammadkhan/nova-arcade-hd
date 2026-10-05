@@ -556,6 +556,25 @@ static void seqStep() {
   seq.step++;
 }
 
+// ------------------------------------------------------------ engine drone (racing games)
+// Two detuned saws and a sub square an octave down, low-passed, gliding to the target pitch. It fades
+// out by itself unless the game keeps calling engine() (so pausing or leaving a game silences it),
+// and while the pause menu ducks the music.
+static float engHz = 0, engTarget = 0, engVol = 0, engVolTarget = 0, engPh[3] = {0, 0, 0.25f}, engLp = 0, engBp = 0;
+static int engHold = 0;
+static inline float engineSample() {
+  if (engHold > 0) engHold--;
+  else engVolTarget = 0;
+  float tv = ducked ? 0 : engVolTarget;
+  engVol += (tv - engVol) * 0.0015f;
+  if (engVol < 1e-4f && tv == 0) return 0;
+  engHz += (engTarget - engHz) * 0.0006f;
+  float f = fmaxf(engHz, 20);
+  float s = saw(engPh[0], f) + saw(engPh[1], f * 1.013f) * 0.8f + square(engPh[2], f * 0.5f) * 0.5f;
+  s = svf(s, fminf(f * 6, 3500), 0.9f, engLp, engBp);
+  return s * engVol * 0.14f;
+}
+
 // ------------------------------------------------------------ mixing
 static void render(float* out, int frames) {
   float master = (vol / 10.0f) * (vol / 10.0f) * 0.9f;
@@ -581,6 +600,8 @@ static void render(float* out, int frames) {
       revIn += s * rv;
       echoL += s * ec * pl; echoR += s * ec * pr;
     }
+    float eng = engineSample();
+    L += eng; Rr += eng;
     // echo: a dotted-eighth-ish ping-pong
     int elen = (int)echoBuf[0].size();
     float eL = echoBuf[0][echoPos], eR = echoBuf[1][echoPos];
@@ -642,6 +663,16 @@ void music(const Song* s) {
   if (mute) return;
   SDL_LockMutex(lock);
   if (s != seq.song || seq.done) startSong(s);
+  SDL_UnlockMutex(lock);
+}
+
+void engine(float hzv, float v) {
+  if (mute || !lock) return;
+  SDL_LockMutex(lock);
+  engTarget = fmaxf(hzv, 0);
+  engVolTarget = clampv(v, 0.0f, 1.0f);
+  engHold = (int)(0.12f * SR);
+  if (engVol < 1e-3f) engHz = engTarget;
   SDL_UnlockMutex(lock);
 }
 
