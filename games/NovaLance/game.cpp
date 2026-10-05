@@ -195,7 +195,7 @@ static void killEnemy(Enemy& e) {
   popup(cx - 6, cy - 8, buf);
   bool big = e.type == E_POD;
   explode(cx, cy, big ? 40 : 18, big ? 2.6f : 1.8f, big);
-  sfx(big ? SFX_KNOCK : SFX_STOMP, clampv(cx / FW * 2 - 1, -1.0f, 1.0f) * 0.6f, big ? 0.6f : 1.0f);
+  sfx(SFX_EXPLODE, clampv(cx / FW * 2 - 1, -1.0f, 1.0f) * 0.6f, big ? 0.7f : 1.3f);
   dropPickup(cx - 6, cy - 6, e.type == E_POD ? 60 : 9);
   e.on = false;
 }
@@ -219,6 +219,7 @@ static void playerHit() {
   pl.respawn = 100;
   explode(pl.x + 16, pl.y + 8, 60, 3.0f, true);
   sfx(SFX_DIE);
+  sfx(SFX_EXPLODE, 0, 0.55f);
   rumble(1.0f, 500);
   pl.weapon = std::max(1, pl.weapon - 1);
 }
@@ -227,7 +228,7 @@ static void useBomb() {
   pl.bombs--;
   flashTimer = 10;
   addShake(12);
-  sfx(SFX_KNOCK, 0, 0.4f); sfx(SFX_SPLASH, 0, 0.6f);
+  sfx(SFX_EXPLODE, 0, 0.4f); sfx(SFX_SPLASH, 0, 0.6f);
   rumble(1.0f, 600);
   for (auto& s : eshots) if (s.on) { explode(s.x + 3, s.y + 3, 2, 1.0f, false); s.on = false; }
   for (auto& e : enemies) if (e.on) damageEnemy(e, e.type == E_BOSS ? 40 : 30);
@@ -260,7 +261,7 @@ static void updatePlayer(const Pad& in) {
     if (pl.weapon == 1) shot(pl.x + 26, pl.y + 5, 7.5f, 0, 0);
     else { shot(pl.x + 24, pl.y + 2, 7.5f, 0, 0); shot(pl.x + 24, pl.y + 9, 7.5f, 0, 0); }
     if (pl.weapon >= 3) { shot(pl.x + 20, pl.y + 4, 6.5f, -1.6f, 1); shot(pl.x + 20, pl.y + 5, 6.5f, 1.6f, 1); }
-    sfx(SFX_BUMP, -0.3f, 2.6f);
+    sfx(SFX_SHOOT, -0.3f, pl.weapon >= 3 ? 1.25f : 1.4f);
   }
   if (in.hit(BTN_B | BTN_L | BTN_Y)) useBomb();
   Particle* p = alloc(parts);   // engine exhaust
@@ -305,11 +306,11 @@ static void updateEnemies() {
       case E_BOSS: {
         if (e.timer < 0) {   // dying: a chain of explosions
           e.timer--;
-          if ((e.timer & 7) == 0) { explode(e.x + frange(10, 74), e.y + frange(8, 54), 16, 2.0f, false); sfx(SFX_STOMP, 0, 0.7f); }
+          if ((e.timer & 7) == 0) { explode(e.x + frange(10, 74), e.y + frange(8, 54), 16, 2.0f, false); sfx(SFX_EXPLODE, 0.3f, 1.0f); }
           if (e.timer < -100) {
             explode(cx, cy, 120, 4.0f, true);
             flashTimer = 8; addShake(16);
-            sfx(SFX_KNOCK, 0, 0.4f);
+            sfx(SFX_EXPLODE, 0, 0.45f);
             rumble(1.0f, 700);
             e.on = false; bossActive = false; bossIdx = -1;
             clearTimer = 240;

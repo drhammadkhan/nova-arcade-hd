@@ -179,8 +179,7 @@ static void explodeAt(int r, int c) {
   rumble(0.5f, 120);
   shake = fmaxf(shake, 14.0f);
   flash = fmaxf(flash, 0.25f);
-  sfx(SFX_KNOCK, 0, 0.7f);
-  sfx(SFX_HURT, 0, 0.6f);
+  sfx(SFX_EXPLODE, 0, 0.75f);
   float cx = GX + c * BW + BW / 2.0f, cy = GY + r * BH + BH / 2.0f;
   burst(cx, cy, 26, Color(255, 190, 70), 2.5f, true);
   ring(cx, cy, Color(255, 160, 60));
@@ -306,7 +305,7 @@ static void updatePlay(const Pad& in) {
     laserCd = 12;
     for (int s = -1; s <= 1; s += 2)
       for (auto& bm : beams) if (!bm.on) { bm = {true, padX + s * (padW / 2 - 4), (float)PAD_Y - 4}; break; }
-    sfx(SFX_BUMP, 0, 2.2f);
+    sfx(SFX_SHOOT, 0, 1.3f);
   }
   for (auto& bm : beams) {
     if (!bm.on) continue;

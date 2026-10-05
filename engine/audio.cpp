@@ -731,6 +731,19 @@ void sfx(Sfx s, float pan, float pitch) {
       break;
     }
     case SFX_PAUSE: noteOn(I_MARIMBA, hz(76), 0.4f, 0); noteOn(I_MARIMBA, hz(69), 0.4f, 0, 0.08f); break;
+    case SFX_SHOOT:
+      tone(W_SQUARE, 1500 * p, 260 * p, 0.09f, 0.05f, 0.12f, 0.16f, 0, 6000);
+      tone(W_SINE, 900 * p, 200 * p, 0.08f, 0.04f, 0.1f, 0.12f);
+      break;
+    case SFX_EXPLODE:
+      tone(W_NOISE, 2200 * p, 120 * p, 0.35f / p, 0.12f / p, 0.6f / p, 0.5f);
+      tone(W_SINE, 140 * p, 40, 0.2f / p, 0.12f / p, 0.4f / p, 0.55f);
+      if (p < 0.8f) drum(K_TAIKO, 0.7f, pan, 0, false);
+      break;
+    case SFX_MARCH:
+      tone(W_TRI, 98 * p, 70 * p, 0.08f, 0.07f, 0.16f, 0.55f, 0, 900);
+      drum(K_WOOD, 0.12f, pan, 0, false);
+      break;
     default: break;
   }
   SDL_UnlockMutex(lock);

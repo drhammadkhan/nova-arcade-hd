@@ -158,6 +158,7 @@ static void killShip() {
   ring(ship.x, ship.y, 1.4f, Color(140, 220, 255));
   shake = 22; flash = 0.35f;
   sfx(SFX_DIE);
+  sfx(SFX_EXPLODE, 0, 0.5f);
   rumble(1.0f, 500);
   lives--;
   if (lives <= 0) gameOver(); else { state = ST_DEAD; stateT = 0; }
@@ -170,7 +171,7 @@ static void breakRock(Rock& r) {
   burst(r.x, r.y, 8 + (2 - r.size) * 8, ROCK_RIM[r.size], 1.5f + (2 - r.size) * 0.4f, 1);
   burst(r.x, r.y, 4 + (2 - r.size) * 5, Color(120, 100, 100), 1.2f, 2);
   ring(r.x, r.y, 0.4f + (2 - r.size) * 0.4f, ROCK_RIM[r.size]);
-  sfx(r.size == 0 ? SFX_KNOCK : SFX_STOMP, clampv((r.x - FW / 2) / (FW / 2), -1.0f, 1.0f) * 0.6f, r.size == 0 ? 0.6f : 0.8f + 0.3f * r.size);
+  sfx(SFX_EXPLODE, clampv((r.x - FW / 2) / (FW / 2), -1.0f, 1.0f) * 0.6f, r.size == 0 ? 0.7f : 1.1f + 0.4f * r.size);
   if (r.size == 0) { shake = fmaxf(shake, 9.0f); rumble(0.4f, 120); }
   if (r.size < 2) {
     float x = r.x, y = r.y, base = atan2f(r.vy, r.vx);   // copy first: the first spawn can reuse r's own slot
@@ -212,7 +213,7 @@ static void updateShip(const Pad& in) {
   if (in.hit(BTN_A | BTN_R) && ship.fireCd == 0) {
     fireShot(pshots, 6, ship.x + cosf(ship.a) * 8, ship.y + sinf(ship.a) * 8, ship.a, 5.0f, ship.vx, ship.vy, 48);
     ship.fireCd = 5;
-    sfx(SFX_BUMP, 0, 2.4f);
+    sfx(SFX_SHOOT, 0, 1.1f);
   }
   if (in.hit(BTN_X | BTN_Y)) {   // hyperspace: a risky jump to a random spot
     burst(ship.x, ship.y, 18, Color(180, 240, 255), 1.5f, 1);
@@ -244,7 +245,7 @@ static void updateUfo() {
     ufo.fireT = frames(ufo.small ? 55 : 80);
     float a = ufo.small ? atan2f(wdy(ufo.y, ship.y), wdx(ufo.x, ship.x)) + frange(-0.15f, 0.15f) : frand() * 6.283f;
     fireShot(eshots, 6, ufo.x, ufo.y, a, 2.6f * speed(), 0, 0, 90);
-    sfx(SFX_BUMP, 0, 1.6f);
+    sfx(SFX_SHOOT, 0, 0.6f);
   }
   if (ufo.x < -24 || ufo.x > FW + 24) { ufo.on = false; ufoTimer = frames(800 + rnd() % 700); }
 }
@@ -254,7 +255,7 @@ static void killUfo() {
   popup(ufo.x, ufo.y - 12, v);
   burst(ufo.x, ufo.y, 40, Color(255, 120, 220), 2.5f, 1);
   ring(ufo.x, ufo.y, 1.2f, Color(255, 120, 220));
-  sfx(SFX_KNOCK, 0, 0.5f);
+  sfx(SFX_EXPLODE, 0, 0.6f);
   ufo.on = false; ufoTimer = frames(900 + rnd() % 700);
 }
 

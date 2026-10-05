@@ -144,6 +144,9 @@ enum Sfx : uint8_t {
   SFX_JUMP, SFX_LAND, SFX_COIN, SFX_STOMP, SFX_ROLL, SFX_HURT, SFX_DIE, SFX_POWERUP,
   SFX_BUMP, SFX_SCROLL, SFX_CHECKPOINT, SFX_SPLASH, SFX_KNOCK, SFX_ONEUP,
   SFX_MOVE, SFX_SELECT, SFX_BACK, SFX_START, SFX_PAUSE,
+  SFX_SHOOT,      // a laser shot (pitch sets the tone)
+  SFX_EXPLODE,    // an explosion (pitch < 1 for bigger)
+  SFX_MARCH,      // a low march beat (pitch picks the note)
   SFX_COUNT
 };
 void sfx(Sfx s, float pan = 0, float pitch = 1);
