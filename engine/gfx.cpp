@@ -153,6 +153,16 @@ void drawStrip(const Img& img, float x, float y, float scale, Color tint) {
 
 static SDL_FColor fc(Color c) { return {c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f}; }
 
+void clip(float x, float y, float w, float h) {
+  if (!R) return;
+  SDL_Rect r = {(int)floorf(x), (int)floorf(y), (int)ceilf(w), (int)ceilf(h)};
+  SDL_SetRenderClipRect(R, &r);
+}
+
+void noClip() {
+  if (R) SDL_SetRenderClipRect(R, nullptr);
+}
+
 void rect(float x, float y, float w, float h, Color c, Blend b) {
   if (c.a == 0) return;
   SDL_SetRenderDrawBlendMode(R, sdlBlend(b));

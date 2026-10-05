@@ -775,9 +775,8 @@ static void drawBoard(float dim = 1) {
       if (phase == PH_BACK) rot = sinf(phaseT * 1.3f) * 10 * (1 - phaseT / 9.0f);
     }
     if (front != (swapping && ((r == swR0 && c == swC0) || (r == swR1 && c == swC1)))) return;
-    if (y < oy - CELL * 1.2f && state != ST_OVER) return;   // still out of sight above the well
+    if (y < oy - CELL * 0.6f && state != ST_OVER) return;   // still out of sight above the well
     float alpha = dim;
-    if (state != ST_OVER && y < oy + CELL * 0.5f) alpha *= clampv((y - (oy - CELL * 0.9f)) / (CELL * 1.4f), 0.0f, 1.0f);   // materialise as they enter
     if (state == ST_OVER) {
       if (y > H + 100) return;
       drawGem(g.type < NTYPES ? g.type : T_NOVA, SP_NONE, x, y, 1, 1, 0, dark.alpha(alpha), g.vy * 2 * ((c & 1) ? 1 : -1));
@@ -805,12 +804,14 @@ static void drawBoard(float dim = 1) {
     if (sel) { y -= 6 + 6 * sinf(frameNo * 0.25f); sx *= 1.06f; sy *= 1.06f; }
     drawGem(g.type, g.sp, x, y, sx, sy, 0, WHITE.alpha(alpha), rot);
   };
+  if (state != ST_OVER) clip(0, oy - 14, W, H);   // new gems slide in from behind the top of the well
   for (int r = 0; r < N; r++) for (int c = 0; c < N; c++) gemAt(r, c, false);
   if (swapping) {   // the gem being moved passes in front
     int br = swR1, bc = swC1;
     gemAt(br, bc, true);
     gemAt(swR0, swC0, true);
   }
+  noClip();
   for (auto& b : beams) if (b.on) drawBeam(b, ox, oy);
   for (auto& b : bolts) if (b.on) drawBolt(b);
   // hint sparkle

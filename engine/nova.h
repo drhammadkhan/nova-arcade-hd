@@ -119,6 +119,9 @@ void glow(float x, float y, float r, Color c, Blend b = BLEND_ADD);
 // raw triangles: n vertices, every three make a triangle
 struct Vtx { float x, y; Color c; };
 void tris(const Vtx* v, int n, Blend b = BLEND_ALPHA);
+// clip everything drawn after this to a rectangle, until noClip()
+void clip(float x, float y, float w, float h);
+void noClip();
 
 // ------------------------------------------------------------ text (Fredoka, baked at 2x)
 enum Align : uint8_t { LEFT = 0, CENTER = 1, RIGHT = 2 };
