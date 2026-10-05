@@ -1,6 +1,7 @@
 // The shared system layer: settings, difficulty, hi-scores, the pause menu and the launcher.
 #include "nova.h"
 #include "audio.h"
+#include "common_art.h"
 #include <SDL3/SDL.h>
 #include <map>
 #include <string>
@@ -223,6 +224,9 @@ static void pauseDraw() {
 }
 
 // ------------------------------------------------------------ the launcher
+static const int MAX_GAMES = 32;
+static int thumbTex[MAX_GAMES];
+static Img thumbs[MAX_GAMES];
 static int sel = 0;
 static Repeat launchRep[2];
 static float selX = 0;
@@ -270,7 +274,9 @@ static void launcherDraw() {
     roundRect(x + 12, y + 18, cw, chh, 30, Color(0, 0, 0, 90));
     roundRect(x - 8, y - 8, cw + 16, chh + 16, 36, on ? Color(255, 214, 90) : Color(255, 255, 255, 40));
     roundRect(x, y, cw, chh, 30, Color(26, 22, 56));
-    if (g->thumb) drawRect(*g->thumb, x + 16, y + 16, cw - 32, (cw - 32) * 9 / 16.0f);
+    const Img* th = g->thumb ? g->thumb : (i < MAX_GAMES && thumbTex[i] >= 0 ? &thumbs[i] : nullptr);
+    if (th) drawRect(*th, x + 16, y + 16, cw - 32, (cw - 32) * 9 / 16.0f);
+    else roundRect(x + 16, y + 16, cw - 32, (cw - 32) * 9 / 16.0f, 16, Color(50, 40, 100));
     TextStyle n; n.size = 52; n.align = CENTER; n.color = WHITE;
     text(g->title, x + cw / 2, y + 16 + (cw - 32) * 9 / 16.0f + 24, n);
     TextStyle tg; tg.size = 26; tg.align = CENTER; tg.color = Color(180, 196, 240); tg.outline = CLEAR;
@@ -287,7 +293,14 @@ static void launcherDraw() {
 void appInit(const char* startGameId) {
   sel = clampv(loadInt("arcade", "last", 0), 0, NGAMES - 1);
   selX = (float)sel;
-  for (int i = 0; i < NGAMES; i++) if (GAMES[i]->init) GAMES[i]->init();
+  loadAtlas(cart::TEX_FILES, cart::TEX, cart::NTEX);
+  for (int i = 0; i < NGAMES && i < MAX_GAMES; i++) {
+    if (GAMES[i]->init) GAMES[i]->init();
+    char path[96];
+    snprintf(path, sizeof(path), "%s/thumb.png", GAMES[i]->id);
+    thumbTex[i] = GAMES[i]->thumb ? -1 : loadTexture(path);
+    thumbs[i] = {&thumbTex[i], 0, 0, 960, 540, 0, 0, 1};
+  }
   if (startGameId)
     for (int i = 0; i < NGAMES; i++)
       if (!strcmp(GAMES[i]->id, startGameId)) { sel = i; startGame(GAMES[i]); }

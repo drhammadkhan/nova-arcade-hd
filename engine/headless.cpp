@@ -46,6 +46,7 @@ bool shot(const char* path, int scaleDown) {
   SDL_RenderClear(renderer);
   appDraw();
   SDL_RenderPresent(renderer);
+  if (!path) return true;   // just exercise the drawing code
   int w = W / scaleDown, h = H / scaleDown;
   std::vector<uint8_t> out(w * h * 3);
   const uint8_t* px = (const uint8_t*)surface->pixels;

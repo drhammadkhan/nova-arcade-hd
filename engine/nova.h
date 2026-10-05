@@ -163,6 +163,7 @@ enum Difficulty : uint8_t { EASY, NORMAL, HARD };
 Difficulty difficulty();
 void setDifficulty(Difficulty d);
 float speed();                       // hazard speed scale: 0.7 / 1.0 / 1.25
+static inline int frames(int n) { int f = (int)(n / speed() + 0.5f); return f < 1 ? 1 : f; }   // a delay, scaled
 const char* difficultyName(Difficulty d);
 uint32_t loadHi(uint32_t def);       // hi-score for the current game + difficulty
 void saveHi(uint32_t v);
@@ -180,7 +181,9 @@ struct Game {
   void (*step)(const Pad& in);       // one 1/60 s tick
   void (*draw)();                    // one frame
   bool (*paused)();                  // optional: false = this game doesn't want the pause menu right now
-  const Img* thumb;                  // launcher card picture (optional)
+  const Img* thumb;                  // launcher card picture (optional: else assets/<id>/thumb.png)
+  void (*bot)(Pad& out);             // optional autopilot: tests (and attract modes) play with it
+  void (*debug)(char* buf, int n);   // optional one-line status for tests (score, level...)
 };
 void pause();                        // open the pause menu (games call this on START)
 void toggleFullscreen();             // platform: window <-> full screen

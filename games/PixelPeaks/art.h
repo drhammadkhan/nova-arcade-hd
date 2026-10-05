@@ -2,7 +2,7 @@
 #pragma once
 #include "nova.h"
 namespace ppart {
-static int TEX[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
+inline int TEX[8] = {-1, -1, -1, -1, -1, -1, -1, -1};   // one copy shared by every file that includes this
 static const char* const TEX_FILES[8] = {"pixelpeaks/atlas0.png", "pixelpeaks/atlas1.png", "pixelpeaks/bg_far0.png", "pixelpeaks/bg_mid0.png", "pixelpeaks/bg_far1.png", "pixelpeaks/bg_mid1.png", "pixelpeaks/bg_far2.png", "pixelpeaks/bg_mid2.png"};
 static const int NTEX = 8;
 static const nova::Img IMG_TORSO = {&TEX[1], 1192, 1704, 82, 94, 40.0f, 79.0f, 0.5000f};
