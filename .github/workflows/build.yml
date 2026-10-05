@@ -1,0 +1,97 @@
+name: Build and deploy
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests (headless)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build (SDL3 is fetched and built statically)
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j4 --target test_pixelpeaks render_music
+      - name: Bot clears all six levels (foes off, pits and water on)
+        run: ./build/test_pixelpeaks bot
+      - name: Bot with foes on (for information)
+        continue-on-error: true
+        run: ./build/test_pixelpeaks bot --damage
+      - name: Screenshots
+        run: |
+          mkdir -p shots
+          ./build/test_pixelpeaks shots shots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: shots
+
+  web:
+    name: Browser build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.10
+          actions-cache-folder: emsdk-cache
+      - name: Build
+        run: bash scripts/build-web.sh
+      - name: Smoke test in Chromium
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+          python3 -m http.server 8765 -d build/site > /dev/null 2>&1 &
+          sleep 1
+          mkdir -p web-shots
+          node tests/web_smoke.mjs web-shots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-screenshots
+          path: web-shots
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        with:
+          path: build/site
+
+  mac:
+    name: Mac app
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Nova Arcade HD.app (universal)
+        run: bash scripts/build-mac.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Nova-Arcade-HD-mac
+          path: build/Nova-Arcade-HD-mac.zip
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/Nova-Arcade-HD-mac.zip
+
+  deploy:
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    needs: [test, web]
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
