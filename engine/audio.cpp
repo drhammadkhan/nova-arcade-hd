@@ -556,6 +556,25 @@ static void seqStep() {
   seq.step++;
 }
 
+// ------------------------------------------------------------ engine drone (racing games)
+// Two detuned saws and a sub square an octave down, low-passed, gliding to the target pitch. It fades
+// out by itself unless the game keeps calling engine() (so pausing or leaving a game silences it),
+// and while the pause menu ducks the music.
+static float engHz = 0, engTarget = 0, engVol = 0, engVolTarget = 0, engPh[3] = {0, 0, 0.25f}, engLp = 0, engBp = 0;
+static int engHold = 0;
+static inline float engineSample() {
+  if (engHold > 0) engHold--;
+  else engVolTarget = 0;
+  float tv = ducked ? 0 : engVolTarget;
+  engVol += (tv - engVol) * 0.0015f;
+  if (engVol < 1e-4f && tv == 0) return 0;
+  engHz += (engTarget - engHz) * 0.0006f;
+  float f = fmaxf(engHz, 20);
+  float s = saw(engPh[0], f) + saw(engPh[1], f * 1.013f) * 0.8f + square(engPh[2], f * 0.5f) * 0.5f;
+  s = svf(s, fminf(f * 6, 3500), 0.9f, engLp, engBp);
+  return s * engVol * 0.14f;
+}
+
 // ------------------------------------------------------------ mixing
 static void render(float* out, int frames) {
   float master = (vol / 10.0f) * (vol / 10.0f) * 0.9f;
@@ -581,6 +600,8 @@ static void render(float* out, int frames) {
       revIn += s * rv;
       echoL += s * ec * pl; echoR += s * ec * pr;
     }
+    float eng = engineSample();
+    L += eng; Rr += eng;
     // echo: a dotted-eighth-ish ping-pong
     int elen = (int)echoBuf[0].size();
     float eL = echoBuf[0][echoPos], eR = echoBuf[1][echoPos];
@@ -642,6 +663,16 @@ void music(const Song* s) {
   if (mute) return;
   SDL_LockMutex(lock);
   if (s != seq.song || seq.done) startSong(s);
+  SDL_UnlockMutex(lock);
+}
+
+void engine(float hzv, float v) {
+  if (mute || !lock) return;
+  SDL_LockMutex(lock);
+  engTarget = fmaxf(hzv, 0);
+  engVolTarget = clampv(v, 0.0f, 1.0f);
+  engHold = (int)(0.12f * SR);
+  if (engVol < 1e-3f) engHz = engTarget;
   SDL_UnlockMutex(lock);
 }
 
@@ -731,6 +762,19 @@ void sfx(Sfx s, float pan, float pitch) {
       break;
     }
     case SFX_PAUSE: noteOn(I_MARIMBA, hz(76), 0.4f, 0); noteOn(I_MARIMBA, hz(69), 0.4f, 0, 0.08f); break;
+    case SFX_SHOOT:
+      tone(W_SQUARE, 1500 * p, 260 * p, 0.09f, 0.05f, 0.12f, 0.16f, 0, 6000);
+      tone(W_SINE, 900 * p, 200 * p, 0.08f, 0.04f, 0.1f, 0.12f);
+      break;
+    case SFX_EXPLODE:
+      tone(W_NOISE, 2200 * p, 120 * p, 0.35f / p, 0.12f / p, 0.6f / p, 0.5f);
+      tone(W_SINE, 140 * p, 40, 0.2f / p, 0.12f / p, 0.4f / p, 0.55f);
+      if (p < 0.8f) drum(K_TAIKO, 0.7f, pan, 0, false);
+      break;
+    case SFX_MARCH:
+      tone(W_TRI, 98 * p, 70 * p, 0.08f, 0.07f, 0.16f, 0.55f, 0, 900);
+      drum(K_WOOD, 0.12f, pan, 0, false);
+      break;
     default: break;
   }
   SDL_UnlockMutex(lock);

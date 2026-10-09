@@ -2,7 +2,7 @@
 
 Guidance for Claude Code (and humans) working on **Nova Arcade HD**: high-resolution remakes of the [Nova Arcade](https://github.com/drhammadkhan/nova-arcade) ESP32 games, for macOS (a native `.app`) and the browser (WebAssembly).
 
-The first game is Pixel Peaks. The original repo is the reference for each game's rules. This fork is a clean break: gameplay is ported by hand, and nothing is shared with the original at build time.
+All 13 games are remade. The original repo is the reference for each game's rules. This fork is a clean break: gameplay is ported by hand, and nothing is shared with the original at build time.
 
 ## Toolchain
 
@@ -41,10 +41,13 @@ The first game is Pixel Peaks. The original repo is the reference for each game'
     - `flip`.
   - Shapes: `rect`, `rectGrad`, `roundRect` (anti-aliased geometry), `disc`, `ring`, `line`, `glow` (additive radial), `tris`.
   - `drawStrip` tiles a parallax layer horizontally.
+  - `clip(x, y, w, h)` limits drawing to a rectangle until `noClip()` (Gem Cascade's well).
 - **Atlases:**
   - Generated art is drawn at **2× density**: `Img.scale = 0.5`, and the pivot is in atlas pixels.
   - Big background layers are separate 1× textures.
   - `hd.py` bleeds colour into transparent pixels, so linear filtering has no dark fringes. Keep that whenever you write PNGs.
+- **Shared art** (`common_art.h`, from `tools/art/common_art.py`, namespace `cart`): `IMG_BLOCK`, `BRICK`, `ORB`, `SPARK`, `RING`, `PUFF`, `STREAK`, and every game's logo `IMG_LOGO_<NAME>` (1× density). Headers use `inline int TEX[]`, so every file shares one copy of the texture slots.
+- **Shared UI** (`ui.h`): `ui::titleScreen` (logo, tagline, hi-score, difficulty, volume, help lines), `ui::gameOver`, `ui::banner`, `ui::panel`/`box`/`stat` for HUDs, and `ui::Stars`.
 - **Text:**
   - Fredoka SemiBold is baked at 128 px into `assets/font.png` and `font_outline.png`, which share one layout. `y` is the top of the capitals.
   - `TextStyle` sets size, colour, outline (`a = 0` for none), alignment and drop shadow.
@@ -54,7 +57,8 @@ The first game is Pixel Peaks. The original repo is the reference for each game'
   - Key presses shorter than a frame are latched, so they're never lost.
   - The keyboard map is in `platform.cpp`. Pads go through SDL_Gamepad and are mapped by position: south = A, east = B.
 - **The system layer** (`system.cpp`):
-  - The launcher (one card per entry in `games/games.cpp`).
+  - The launcher: a scrolling grid of cards, four per row, one per entry in `games/games.cpp`. Each card shows `assets/<id>/thumb.png`.
+  - `Game` holds `id` (save namespace and assets folder), `title`, `tagline`, `init`, `enter`, `step`, `draw`, `paused`, `thumb`, `bot` (an autopilot for the tests) and `debug` (a status line).
   - The pause menu: resume, volume, full screen, quit to menu. Esc or the Home button opens it, unless `Game::paused()` returns false.
   - Difficulty is Easy, Normal or Hard (`speed()` 0.7 / 1.0 / 1.25), saved per game under `diff`.
   - Hi-scores are kept per difficulty under the keys `hi`, `hiE` and `hiH`.
@@ -67,6 +71,8 @@ The first game is Pixel Peaks. The original repo is the reference for each game'
   - Instruments are in the `INST` table. Drums and sound effects are synthesised in `renderVoice`.
   - Songs are text scores: see the format at the top of `audio.h`. Chords, a lead and counter-melody (16 tokens per bar), arp, bass and drum patterns of 16 characters per bar, and an optional pad.
   - New sound effects go before `SFX_COUNT` in `nova.h`, with a case in `audio::sfx`.
+  - `audio::engine(hz, vol)` is a continuous engine drone (Turbo Horizon). Call it every frame; it fades out by itself when the calls stop or the game pauses.
+  - `tools/port_music.py <original game.h>` converts an original game's tunes to the song format; the remakes keep the original melodies (they're the owner's own).
   - `audio::mute > 0` silences sound effects and music changes. Bots set it while looking ahead.
 - **Headless runner** (`headless.cpp`):
   - A software renderer onto a 1920×1080 surface, with no audio device.
@@ -85,8 +91,11 @@ The first game is Pixel Peaks. The original repo is the reference for each game'
   - Assets are committed so a Mac build needs only CMake.
   - The web build relinks when an asset changes (`LINK_DEPENDS`).
 - All art and music must stay original: no copied sprites, logos or tunes from commercial games.
-- Check visuals with `test_pixelpeaks shots DIR` (and `--preview` on the art script) before pushing.
-- Regenerate the launcher thumbnail (`test_pixelpeaks thumb`) and `docs/screenshots/` when a game's look changes.
+- Games other than Pixel Peaks keep their gameplay in the original's 320×240 units as floats and draw through `X(x) = OX + x*4.5`, `Y(y) = y*4.5`, either centring a 4:3 field (`OX = 240`, HUD in the side margins) or widening it to 16:9 (Astro Drift, Nova Lance, City Shield). Tuning numbers stay comparable with the original.
+- Every game has a `bot()`. `test_games smoke [id]` runs each one for 3 minutes of bot play and must report 0 failed; `test_games shots DIR [id]` writes title and play screenshots; `test_games launcher DIR` shoots the launcher.
+- `docs/remake-brief.md` is the checklist for remaking a game (it was given to the sub-agents that built five of them).
+- Check visuals with `test_pixelpeaks shots DIR`, `test_games shots DIR` and `--preview` on the art scripts before pushing.
+- Regenerate launcher thumbnails (`test_pixelpeaks thumb`, `test_games thumbs [id]`) and `docs/screenshots/` when a game's look changes.
 
 ## Pixel Peaks HD (`games/PixelPeaks/`)
 
@@ -116,13 +125,24 @@ The first game is Pixel Peaks. The original repo is the reference for each game'
   - Debug a stuck bot with `BOT_LEVEL=n BOT_TRACE=1`.
 - **Music:** songs per world are in `game.cpp`: koto and marimba for Blossom, flute, koto and choir with taiko for Bamboo dusk, saw lead and strings for Misty Peaks. `render_music DIR` writes them as WAVs.
 
+## The other games (`games/<Game>/`)
+
+Each follows the original's rules and timings; the original's `game.h` is the reference. Art scripts are `games/<Game>/tools/make_art.py` (namespaces `nlart`, `atart`, `hrart`, `mmart`, `vrart`, `gcart`, `csart`, `thart`); Blockfall, Brick Storm, Neon Serpent and Astro Drift use only the shared art and run-time drawing.
+- **Volt Rally** is paddle tennis (not a racer): first to 5 beats each of six rivals; holding A as the ball meets the paddle smashes it.
+- **Maze Munch:** the maze is baked from the layout into big textures (tube, fill, glow); the wisps keep the original's hunting rules and scatter/chase schedule.
+- **Gem Cascade:** a 4-match makes a flame gem, an L or T a star gem, 5 a nova; the level bar drains only while the board is idle.
+- **City Shield:** X/A/B fire from the left, centre or right base. The ground profile in `art.h` matches the original's exactly.
+- **Turbo Horizon:** the road is projected per segment at 1920×1080 and sent as one `tris` call per frame; sprites are sorted far to near and clipped at the hill crest in front of them. The bot is the original's `autopilot()`.
+- Several games map the original's sounds onto the nearest HD `Sfx` (there is no skid, blip or siren yet); add real ones before `SFX_COUNT` if they sound wrong.
+
 ## Status
 
 - **Builds and tests:**
   - It builds and runs on Linux, headless and native.
   - The browser build was checked in headless Chromium: launcher, title and gameplay, no page errors, about 55 fps on software GL.
-  - The bot clears all six levels.
+  - The Pixel Peaks bot clears all six levels; every other game passes `test_games smoke`.
 - **Not yet checked:**
   - On a real Mac: the `.app` build (CI builds it on macos-14), Retina sharpness, gamepads, the audio device.
   - On a real browser: mobile and touch controls, which don't exist yet.
-- **Next:** remake more games, starting with Turbo Horizon, which needs a pseudo-3D road renderer in HD.
+  - Turbo Horizon's frame rate in a real browser (it's the heaviest game per frame) and the new games' sounds by ear.
+- **Next:** touch controls for the browser on phones, as the original's web player has.

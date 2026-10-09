@@ -41,12 +41,13 @@ else()
 endif()
 
 # ---------------------------------------------------------------- the engine and the games
+file(GLOB GAME_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/games/*/game.cpp)
 add_library(novacore STATIC
   engine/gfx.cpp
   engine/audio.cpp
   engine/system.cpp
   games/games.cpp
-  games/PixelPeaks/game.cpp
+  ${GAME_SOURCES}
 )
 target_include_directories(novacore PUBLIC engine games)
 target_link_libraries(novacore PUBLIC ${SDL_LIB})
@@ -102,4 +103,7 @@ if(NOT EMSCRIPTEN)
   target_link_libraries(render_music PRIVATE novacore)
   target_compile_definitions(test_pixelpeaks PRIVATE ASSETS="${ASSETS_DIR}")
   target_compile_definitions(render_music PRIVATE ASSETS="${ASSETS_DIR}")
+  add_executable(test_games tests/test_games.cpp engine/headless.cpp)
+  target_link_libraries(test_games PRIVATE novacore)
+  target_compile_definitions(test_games PRIVATE ASSETS="${ASSETS_DIR}")
 endif()

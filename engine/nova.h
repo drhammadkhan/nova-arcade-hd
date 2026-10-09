@@ -119,6 +119,9 @@ void glow(float x, float y, float r, Color c, Blend b = BLEND_ADD);
 // raw triangles: n vertices, every three make a triangle
 struct Vtx { float x, y; Color c; };
 void tris(const Vtx* v, int n, Blend b = BLEND_ALPHA);
+// clip everything drawn after this to a rectangle, until noClip()
+void clip(float x, float y, float w, float h);
+void noClip();
 
 // ------------------------------------------------------------ text (Fredoka, baked at 2x)
 enum Align : uint8_t { LEFT = 0, CENTER = 1, RIGHT = 2 };
@@ -144,6 +147,9 @@ enum Sfx : uint8_t {
   SFX_JUMP, SFX_LAND, SFX_COIN, SFX_STOMP, SFX_ROLL, SFX_HURT, SFX_DIE, SFX_POWERUP,
   SFX_BUMP, SFX_SCROLL, SFX_CHECKPOINT, SFX_SPLASH, SFX_KNOCK, SFX_ONEUP,
   SFX_MOVE, SFX_SELECT, SFX_BACK, SFX_START, SFX_PAUSE,
+  SFX_SHOOT,      // a laser shot (pitch sets the tone)
+  SFX_EXPLODE,    // an explosion (pitch < 1 for bigger)
+  SFX_MARCH,      // a low march beat (pitch picks the note)
   SFX_COUNT
 };
 void sfx(Sfx s, float pan = 0, float pitch = 1);
@@ -163,6 +169,7 @@ enum Difficulty : uint8_t { EASY, NORMAL, HARD };
 Difficulty difficulty();
 void setDifficulty(Difficulty d);
 float speed();                       // hazard speed scale: 0.7 / 1.0 / 1.25
+static inline int frames(int n) { int f = (int)(n / speed() + 0.5f); return f < 1 ? 1 : f; }   // a delay, scaled
 const char* difficultyName(Difficulty d);
 uint32_t loadHi(uint32_t def);       // hi-score for the current game + difficulty
 void saveHi(uint32_t v);
@@ -180,7 +187,9 @@ struct Game {
   void (*step)(const Pad& in);       // one 1/60 s tick
   void (*draw)();                    // one frame
   bool (*paused)();                  // optional: false = this game doesn't want the pause menu right now
-  const Img* thumb;                  // launcher card picture (optional)
+  const Img* thumb;                  // launcher card picture (optional: else assets/<id>/thumb.png)
+  void (*bot)(Pad& out);             // optional autopilot: tests (and attract modes) play with it
+  void (*debug)(char* buf, int n);   // optional one-line status for tests (score, level...)
 };
 void pause();                        // open the pause menu (games call this on START)
 void toggleFullscreen();             // platform: window <-> full screen

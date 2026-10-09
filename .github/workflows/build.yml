@@ -37,10 +37,14 @@ jobs:
       - name: Bot with foes on (for information)
         continue-on-error: true
         run: ./build/test_pixelpeaks bot --damage
-      - name: Screenshots
+      - name: Every other game plays 3 minutes by bot (with screenshots)
         run: |
           mkdir -p shots
+          ./build/test_games shots shots
+      - name: Screenshots
+        run: |
           ./build/test_pixelpeaks shots shots
+          ./build/test_games launcher shots
       - uses: actions/upload-artifact@v4
         with:
           name: screenshots
